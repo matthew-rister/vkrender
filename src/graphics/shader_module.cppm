@@ -83,7 +83,7 @@ ShaderModule::ShaderModule(const vk::Device device,
                            const std::filesystem::path& glsl_filepath) {
   const auto glslang_stage = GetGlslangStage(shader_stage);
   const auto glsl_source = ReadFile(glsl_filepath);
-  const auto spirv = glslang::Compile(glslang_stage, glsl_source);
+  const auto spirv = GlslangCompiler::Get().Compile(glslang_stage, glsl_source);
 
   shader_module_ = device.createShaderModuleUnique(
       vk::ShaderModuleCreateInfo{.codeSize = spirv.size() * sizeof(decltype(spirv)::value_type),

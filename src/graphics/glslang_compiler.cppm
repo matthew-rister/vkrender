@@ -17,11 +17,34 @@ module;
 
 export module glslang_compiler;
 
-namespace gfx::glslang {
+namespace gfx {
 
-export std::vector<std::uint32_t> Compile(glslang_stage_t glslang_stage, const std::string& glsl_source);
+export class GlslangCompiler {
+public:
+  [[nodiscard]] static const GlslangCompiler& Get() {
+    static const GlslangCompiler kInstance;
+    return kInstance;
+  }
 
-}  // namespace gfx::glslang
+  GlslangCompiler(const GlslangCompiler&) = delete;
+  GlslangCompiler& operator=(const GlslangCompiler&) = delete;
+
+  GlslangCompiler(GlslangCompiler&&) noexcept = delete;
+  GlslangCompiler& operator=(GlslangCompiler&&) noexcept = delete;
+
+  ~GlslangCompiler() noexcept { glslang_finalize_process(); }
+
+  static std::vector<std::uint32_t> Compile(glslang_stage_t glslang_stage, const std::string& glsl_source);
+
+private:
+  GlslangCompiler() {
+    if (glslang_initialize_process() == 0) {
+      throw std::runtime_error{"glslang initialization failed"};
+    }
+  }
+};
+
+}  // namespace gfx
 
 module :private;
 
@@ -60,29 +83,6 @@ private:
 };
 
 namespace {
-
-class GlslangProcess {
-public:
-  [[nodiscard]] static const GlslangProcess& Get() {
-    static const GlslangProcess kInstance;
-    return kInstance;
-  }
-
-  GlslangProcess(const GlslangProcess&) = delete;
-  GlslangProcess& operator=(const GlslangProcess&) = delete;
-
-  GlslangProcess(GlslangProcess&&) noexcept = delete;
-  GlslangProcess& operator=(GlslangProcess&&) noexcept = delete;
-
-  ~GlslangProcess() noexcept { glslang_finalize_process(); }
-
-private:
-  GlslangProcess() {
-    if (glslang_initialize_process() == 0) {
-      throw std::runtime_error{"glslang initialization failed"};
-    }
-  }
-};
 
 using GlslangShader = std::unique_ptr<glslang_shader_t, decltype(&glslang_shader_delete)>;
 using GlslangProgram = std::unique_ptr<glslang_program_t, decltype(&glslang_program_delete)>;
@@ -193,13 +193,14 @@ std::vector<std::uint32_t> GenerateSpirv(const glslang_stage_t glslang_stage, gl
 
 }  // namespace
 
-namespace gfx::glslang {
+namespace gfx {
 
-std::vector<std::uint32_t> Compile(const glslang_stage_t glslang_stage, const std::string& glsl_source) {
-  [[maybe_unused]] const auto& glslang_process = GlslangProcess::Get();
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static): enforce access through a singleton instance
+std::vector<std::uint32_t> GlslangCompiler::Compile(const glslang_stage_t glslang_stage,
+                                                    const std::string& glsl_source) {
   const auto glslang_shader = CreateGlslangShader(glslang_stage, glsl_source);
   const auto glslang_program = CreateGlslangProgram(glslang_stage, *glslang_shader);
   return GenerateSpirv(glslang_stage, *glslang_program);
 }
 
-}  // namespace gfx::glslang
+}  // namespace gfx
