@@ -375,56 +375,41 @@ struct CreateSamplerOptions {
   std::unordered_map<vk::SamplerCreateInfo, vk::UniqueSampler>* samplers = nullptr;
 };
 
-// filter and address mode values come from https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#reference-sampler
-enum class SamplerFilter : std::uint16_t {
-  kNearest = 9728,
-  kLinear = 9729,
-  kNearestMipmapNearest = 9984,
-  kLinearMipmapNearest = 9985,
-  kNearestMipmapLinear = 9986,
-  kLinearMipmapLinear = 9987
-};
-
-enum class SamplerAddressMode : std::uint16_t { kClampToEdge = 33071, kMirroredRepeat = 33648, kRepeat = 10497 };
-
-vk::Filter GetSamplerMagFilter(const int gltf_mag_filter) {
-  switch (static_cast<SamplerFilter>(gltf_mag_filter)) {
-    using enum SamplerFilter;
-    case kNearest:
+vk::Filter GetSamplerMagFilter(const cgltf_filter_type gltf_mag_filter) {
+  switch (gltf_mag_filter) {
+    case cgltf_filter_type_nearest:
       return vk::Filter::eNearest;
-    case kLinear:
+    case cgltf_filter_type_linear:
       return vk::Filter::eLinear;
     default:
       std::unreachable();
   }
 }
 
-std::pair<vk::Filter, vk::SamplerMipmapMode> GetSamplerMinFilterAndMipmapMode(const int gltf_min_filter) {
-  switch (static_cast<SamplerFilter>(gltf_min_filter)) {
-    using enum SamplerFilter;
-    case kNearest:
-    case kNearestMipmapNearest:
+std::pair<vk::Filter, vk::SamplerMipmapMode> GetSamplerMinFilterAndMipmapMode(const cgltf_filter_type gltf_min_filter) {
+  switch (gltf_min_filter) {
+    case cgltf_filter_type_nearest:
+    case cgltf_filter_type_nearest_mipmap_nearest:
       return std::pair{vk::Filter::eNearest, vk::SamplerMipmapMode::eNearest};
-    case kLinear:
-    case kLinearMipmapNearest:
+    case cgltf_filter_type_linear:
+    case cgltf_filter_type_linear_mipmap_nearest:
       return std::pair{vk::Filter::eLinear, vk::SamplerMipmapMode::eNearest};
-    case kNearestMipmapLinear:
+    case cgltf_filter_type_nearest_mipmap_linear:
       return std::pair{vk::Filter::eNearest, vk::SamplerMipmapMode::eLinear};
-    case kLinearMipmapLinear:
+    case cgltf_filter_type_linear_mipmap_linear:
       return std::pair{vk::Filter::eLinear, vk::SamplerMipmapMode::eLinear};
     default:
       std::unreachable();
   }
 }
 
-vk::SamplerAddressMode GetSamplerAddressMode(const int gltf_wrap_mode) {
-  switch (static_cast<SamplerAddressMode>(gltf_wrap_mode)) {
-    using enum SamplerAddressMode;
-    case kClampToEdge:
+vk::SamplerAddressMode GetSamplerAddressMode(const cgltf_wrap_mode gltf_wrap_mode) {
+  switch (gltf_wrap_mode) {
+    case cgltf_wrap_mode_clamp_to_edge:
       return vk::SamplerAddressMode::eClampToEdge;
-    case kMirroredRepeat:
+    case cgltf_wrap_mode_mirrored_repeat:
       return vk::SamplerAddressMode::eMirroredRepeat;
-    case kRepeat:
+    case cgltf_wrap_mode_repeat:
       return vk::SamplerAddressMode::eRepeat;
     default:
       std::unreachable();
