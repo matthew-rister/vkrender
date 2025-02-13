@@ -51,6 +51,20 @@ private:
   VmaAllocation allocation_ = nullptr;
 };
 
+export template <typename T>
+[[nodiscard]] Buffer CreateHostVisibleBuffer(const DataView<const T> data_view, const VmaAllocator allocator) {
+  Buffer host_buffer{data_view.size_bytes(),
+                     vk::BufferUsageFlagBits::eTransferSrc,
+                     allocator,
+                     kHostVisibleAllocationCreateInfo};
+
+  host_buffer.MapMemory();
+  host_buffer.Copy(data_view);
+  host_buffer.UnmapMemory();
+
+  return host_buffer;
+}
+
 }  // namespace vktf
 
 module :private;
